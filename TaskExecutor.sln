@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskExecutor", "TaskExecutor\TaskExecutor.csproj", "{23558DE7-8D6E-4DC0-8B4B-8E68D48AA150}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskExecutorTests", "TaskExecutorTests\TaskExecutorTests.csproj", "{C9D324D6-612A-4FBE-8005-D00C3FEB2BA1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{23558DE7-8D6E-4DC0-8B4B-8E68D48AA150}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{23558DE7-8D6E-4DC0-8B4B-8E68D48AA150}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{23558DE7-8D6E-4DC0-8B4B-8E68D48AA150}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{23558DE7-8D6E-4DC0-8B4B-8E68D48AA150}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9D324D6-612A-4FBE-8005-D00C3FEB2BA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9D324D6-612A-4FBE-8005-D00C3FEB2BA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9D324D6-612A-4FBE-8005-D00C3FEB2BA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9D324D6-612A-4FBE-8005-D00C3FEB2BA1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
