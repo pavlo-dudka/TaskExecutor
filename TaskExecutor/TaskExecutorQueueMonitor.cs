@@ -1,21 +1,24 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace TaskExecutor
 {
-    public class TaskExecutorQueue
+    public class TaskExecutorQueueMonitor
     {
-        BlockingCollection<Action> taskCollection = new BlockingCollection<Action>(new ConcurrentQueue<Action>());
+        Queue<Action> taskCollection = new Queue<Action>();
         Task executionTask;
         CancellationTokenSource cancellationTokenSource;
         CancellationToken cancellationToken;
+        object monitor = new object();
         StopBehaviour stopBehaviour;
 
-        public event EventHandler<ExceptionEventArguments> OnException;        
+        public event EventHandler<ExceptionEventArguments> OnException;
 
-        public TaskExecutorQueue()
+        public TaskExecutorQueueMonitor()
         {
             cancellationTokenSource = new CancellationTokenSource();
             cancellationToken = cancellationTokenSource.Token;
@@ -25,8 +28,17 @@ namespace TaskExecutor
                 while (true)
                 {
                     Action action;
-                    if (!taskCollection.TryTake(out action, Timeout.Infinite))
-                        break;
+                    lock (monitor)
+                    {
+                        while (taskCollection.Count == 0 && stopBehaviour == StopBehaviour.Undefined)
+                            Monitor.Wait(monitor, 100);
+
+                        if (stopBehaviour == StopBehaviour.WaitOne ||
+                            stopBehaviour == StopBehaviour.WaitAll && taskCollection.Count == 0)
+                            break;
+
+                        action = taskCollection.Dequeue();
+                    }
 
                     try
                     {
@@ -37,10 +49,6 @@ namespace TaskExecutor
                         if (OnException != null)
                             OnException(this, new ExceptionEventArguments(ex));
                     }
-
-                    if (stopBehaviour == StopBehaviour.WaitOne && taskCollection.IsAddingCompleted ||
-                        stopBehaviour == StopBehaviour.WaitAll && taskCollection.IsCompleted)
-                        break;
                 }
             }, cancellationToken);
         }
@@ -50,13 +58,17 @@ namespace TaskExecutor
             if (action == null)
                 throw new ArgumentNullException(nameof(action));
 
-            taskCollection.Add(action);
+            lock (monitor)
+            {
+                taskCollection.Enqueue(action);
+                if (taskCollection.Count == 1)
+                    Monitor.Pulse(monitor);
+            }
         }
 
         public void Stop(StopBehaviour stopBehaviour)
         {
             this.stopBehaviour = stopBehaviour;
-            taskCollection.CompleteAdding();
 
             switch (stopBehaviour)
             {

@@ -2,32 +2,28 @@
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace TaskExecutor
 {
-    public class TaskExecutorQueue
+    public class TaskExecutorQueueDataflow
     {
-        BlockingCollection<Action> taskCollection = new BlockingCollection<Action>(new ConcurrentQueue<Action>());
+        ActionBlock<Action> actionBlock;
         Task executionTask;
         CancellationTokenSource cancellationTokenSource;
         CancellationToken cancellationToken;
         StopBehaviour stopBehaviour;
 
-        public event EventHandler<ExceptionEventArguments> OnException;        
+        public event EventHandler<ExceptionEventArguments> OnException;
 
-        public TaskExecutorQueue()
+        public TaskExecutorQueueDataflow()
         {
             cancellationTokenSource = new CancellationTokenSource();
             cancellationToken = cancellationTokenSource.Token;
 
-            executionTask = Task.Run(() =>
-            {
-                while (true)
+            actionBlock = new ActionBlock<Action>(
+                action: (action) =>
                 {
-                    Action action;
-                    if (!taskCollection.TryTake(out action, Timeout.Infinite))
-                        break;
-
                     try
                     {
                         action();
@@ -37,12 +33,12 @@ namespace TaskExecutor
                         if (OnException != null)
                             OnException(this, new ExceptionEventArguments(ex));
                     }
-
-                    if (stopBehaviour == StopBehaviour.WaitOne && taskCollection.IsAddingCompleted ||
-                        stopBehaviour == StopBehaviour.WaitAll && taskCollection.IsCompleted)
-                        break;
-                }
-            }, cancellationToken);
+                    if (stopBehaviour == StopBehaviour.WaitOne)
+                        cancellationTokenSource.Cancel();
+                },
+                dataflowBlockOptions: new ExecutionDataflowBlockOptions() { CancellationToken = cancellationToken }               
+            );
+            executionTask = actionBlock.Completion;
         }
 
         public void Add(Action action)
@@ -50,13 +46,13 @@ namespace TaskExecutor
             if (action == null)
                 throw new ArgumentNullException(nameof(action));
 
-            taskCollection.Add(action);
+            actionBlock.Post(action);
         }
 
         public void Stop(StopBehaviour stopBehaviour)
         {
             this.stopBehaviour = stopBehaviour;
-            taskCollection.CompleteAdding();
+            actionBlock.Complete();
 
             switch (stopBehaviour)
             {
